@@ -12,10 +12,10 @@ async function main() {
   if (network.config.chainId === 4 && process.env.ETHERSCAN_API_KEY) {
     console.log("awaiting block confirmation")
     await voting.deployTransaction.wait(3)
-    await verify(
-      voting.address,
-      "0x48656c6c6f20576f726c64210000000000000000000000000000000000000000"
-    )
+
+    await verify(voting.address, [
+      "0x48656c6c6f20576f726c64210000000000000000000000000000000000000000",
+    ])
   }
 }
 
