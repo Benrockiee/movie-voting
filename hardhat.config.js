@@ -1,6 +1,7 @@
 require("@nomiclabs/hardhat-waffle")
 require("dotenv").config()
 require("./tasks/block-number")
+require("@nomiclabs/hardhat-etherscan")
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 const RINKEBY_RPC_URL = process.env.RINKEBY_RPC_URL
@@ -19,4 +20,7 @@ module.exports = {
   },
 
   solidity: "0.8.7",
+  etherscan: {
+    apiKey: ETHERSCAN_API_KEY,
+  },
 }
