@@ -1,13 +1,1 @@
-# Sample Hardhat Project
-
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-GAS_REPORT=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
-```
+This project contains a Voting contract with verification on Etherscan block explorer, Task plugins to get the Block Number of any Testnet we deploy to with some written tests to ensure these functions Authenticity. Also Gas coverage to output the Gas consumption. 

@@ -2,6 +2,8 @@ require("@nomiclabs/hardhat-waffle")
 require("dotenv").config()
 require("./tasks/block-number")
 require("@nomiclabs/hardhat-etherscan")
+require("hardhat-gas-reporter")
+require("solidity-coverage")
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 const RINKEBY_RPC_URL = process.env.RINKEBY_RPC_URL
@@ -17,10 +19,20 @@ module.exports = {
       accounts: [PRIVATE_KEY],
       chainId: 4,
     },
+    localHost: {
+      url: "http://127.0.0.1:8545/",
+      chainId: 31337,
+    },
   },
 
   solidity: "0.8.7",
   etherscan: {
     apiKey: ETHERSCAN_API_KEY,
+  },
+  gasReporter: {
+    enabled: true,
+    outputFile: "gas-report.txt",
+    noColors: true,
+    currency: "USD",
   },
 }

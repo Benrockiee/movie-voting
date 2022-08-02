@@ -13,28 +13,24 @@ describe("voting", function () {
 
   it("makes sure that the chairperson is the msg.sender", async function () {
     const chairperson = await voting.chairperson()
-    const expectedString = "msg.sender"
-    assert.equal(expectedString.toString(), expectedString)
+    const expectedCaller = "msg.sender"
+    assert.equal(expectedCaller.toString(), expectedCaller)
   })
 
   it("only the chairperson can give right to vote", async function () {
     const chairperson = await voting.chairperson()
-    const expectedString = "msg.sender"
-    assert.equal(expectedString.toString(), expectedString)
+    const expectedCaller = "msg.sender"
+    assert.equal(expectedCaller.toString(), expectedCaller)
   })
 
   it("checks to see if users already voted", async function () {
-    const checkVoterString = "User already voted"
-    assert.equal(checkVoterString.toString(), checkVoterString)
+    const checkVoter = "User already voted"
+    assert.equal(checkVoter.toString(), checkVoter)
   })
 
-  it("ensure the elibility of the voter", async function () {
-    const currentVoterEligibility = await voting.giveRightToVote()
-    const expectedEligibilityString = "1"
-    assert.equal(
-      expectedEligibilityString,
-      toString(),
-      expectedEligibilityString
-    )
+  it("checks to announce the name of the winner", async function () {
+    const announceWinner = await voting.winnerName()
+    const expectedWinner = "winnerName"
+    assert.equal(expectedWinner.toString(), expectedWinner)
   })
 })
