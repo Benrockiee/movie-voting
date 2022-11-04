@@ -1,88 +1,169 @@
 //SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.7;
+pragma solidity ^0.8.8;
 
-contract voting {
+error Vote__EntryFeeNotEnough();
+error Vote__UserIsNotEligibleToVote();
+error Vote__UserAlreadyVoted();
+error Vote__OnlyTheChairpersonHasTheRightToAssignVoters();
+error Vote__TimeIsInappropriate();
+
+contract Vote {
   struct Voter {
     uint256 vote;
     uint256 weight;
     bool voted;
-    address delegate;
   }
 
   struct Proposal {
-    bytes32 name;
-    uint256 voteCount;
+    bytes32 title;
+    uint256 movieVoteCount;
   }
+
+  /* State variables */
+  uint256 public immutable i_entryFee;
+  uint256 public immutable i_votingStartTime;
+  uint256 public immutable i_thursdayVotingEndTime;
+  address payable[] private s_voters;
 
   address public chairperson;
 
+  /* Events */
+  event VoteEntry(address indexed user);
+
   mapping(address => Voter) public voters;
+
+  modifier votingLinesAreOpen(uint256 currentTime) {
+    require(currentTime >= i_votingStartTime);
+    require(currentTime <= i_thursdayVotingEndTime);
+    _;
+  }
+
+  modifier isChairPerson() {
+    require(msg.sender == chairperson);
+    _;
+  }
 
   Proposal[] public proposals;
 
-  constructor(bytes32[] memory proposalNames) {
+  /**
+   * @param votingStartTime When the voting process will start
+   * @param thursdayVotingEndTime When the voting process will end
+   */
+
+  /* Functions */
+
+  constructor(
+    bytes32[] memory proposalTitles,
+    uint256 entryFee,
+    uint256 votingStartTime,
+    uint256 thursdayVotingEndTime
+  ) {
+    i_entryFee = entryFee;
     chairperson = msg.sender;
+    i_votingStartTime = votingStartTime;
+    i_thursdayVotingEndTime = thursdayVotingEndTime;
     voters[chairperson].weight = 1;
-    for (uint256 i = 0; i < proposalNames.length; i++) {
-      proposals.push(Proposal({name: proposalNames[i], voteCount: 0}));
+    for (uint256 i = 0; i < proposalTitles.length; i++) {
+      proposals.push(Proposal({title: proposalTitles[i], movieVoteCount: 0}));
     }
   }
 
-  function giveRightToVote(address voter) external {
-    require(
-      msg.sender == chairperson,
-      "Only the chairperson has the right to assign voters"
-    );
-    require(voters[voter].voted, "User already voted");
+  function giveRightToVote(address voter) external isChairPerson {
+    if (msg.sender != chairperson) {
+      revert Vote__OnlyTheChairpersonHasTheRightToAssignVoters();
+    }
+
+    // require(
+    // msg.sender == chairperson,
+    // "Only the chairperson has the right to assign voters");
+
     require(voters[voter].weight == 0);
     voters[voter].weight = 1;
   }
 
-  function delegate(address to) external {
+  function EntryVote(uint256 proposal, uint256 currentTime)
+    external
+    payable
+    votingLinesAreOpen(currentTime)
+  {
     Voter storage sender = voters[msg.sender];
-    require(sender.weight != 0, "User is not eligible to vote");
-    require(!sender.voted, "This user already voted");
-    require(to != msg.sender, "Self delegation is not allowed");
-
-    while (voters[to].delegate != address(0)) to = (voters[to].delegate);
-
-    require(to != msg.sender, "found loop in delegation");
-
-    Voter storage delegate_ = voters[to];
-    require(delegate_.weight >= 1);
-
-    sender.voted = true;
-    sender.delegate = to;
-
-    if (delegate_.voted) {
-      proposals[delegate_.vote].voteCount += sender.weight;
-    } else {
-      delegate_.weight += sender.weight;
+    if (msg.value < i_entryFee) {
+      revert Vote__EntryFeeNotEnough();
     }
-  }
+    s_voters.push(payable(msg.sender));
+    //Emit an event when we update a dynamic array or mapping
+    // Named events with the function name reversed
+    emit VoteEntry(msg.sender);
 
-  function vote(uint256 proposal) external {
-    Voter storage sender = voters[msg.sender];
-    require(sender.weight != 0, "User is not eligible to vote");
-    require(!sender.voted, "User already voted");
+    if (sender.weight != 0) {
+      revert Vote__UserIsNotEligibleToVote();
+    }
+
+    if (!sender.voted) {
+      revert Vote__UserAlreadyVoted();
+    }
 
     sender.voted = true;
     sender.vote = proposal;
-    proposals[proposal].voteCount += sender.weight;
+    proposals[proposal].movieVoteCount += sender.weight;
   }
 
+  /**
+   * @dev used to update the voting start & end times
+   * @param votingStartTime Start time that needs to be updated
+   * @param currentTime Current time that needs to be updated
+   */
+  function updateVotingStartTime(uint256 votingStartTime, uint256 currentTime)
+    public
+    view
+    isChairPerson
+  {
+    if (i_votingStartTime < currentTime) {
+      revert Vote__TimeIsInappropriate();
+    }
+  }
+
+  /**
+   * Here we winning vote count is initially assigned to 0
+   * So we iterate and count through the movie votes to get the winner
+   */
   function winningProposal() public view returns (uint256 winningProposal_) {
     uint256 winningVoteCount = 0;
     for (uint256 p = 0; p < proposals.length; p++) {
-      if (proposals[p].voteCount > winningVoteCount) {
-        winningVoteCount = proposals[p].voteCount;
+      if (proposals[p].movieVoteCount > winningVoteCount) {
+        winningVoteCount = proposals[p].movieVoteCount;
         winningProposal_ = p;
       }
     }
   }
 
-  function winnerName() external view returns (bytes32 winnerName_) {
-    winnerName_ = proposals[winningProposal()].name;
+  /**
+   * Here, the movie that won is returned with its title
+   */
+
+  function movieWinnerTitle() external view returns (bytes32 winnerTitle_) {
+    winnerTitle_ = proposals[winningProposal()].title;
+  }
+
+  /** Getter Functions */
+  function getEntryFee() public view returns (uint256) {
+    return i_entryFee;
+  }
+
+  function getVoter(uint256 index) public view returns (address) {
+    return s_voters[index];
+  }
+
+  /**
+   * @dev Gives ending epoch time of voting
+   * @return endTime When the voting ends
+   */
+  function getVotingEndTime() public view returns (uint256 endTime) {
+    endTime = i_thursdayVotingEndTime;
+  }
+
+  function getNumberOfVoters() public view returns (uint256) {
+    return s_voters.length;
   }
 }

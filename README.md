@@ -1,1 +1,0 @@
-This project contains a Voting contract with verification on Etherscan block explorer, Task plugins to get the Block Number of any Testnet we deploy to with some written tests to ensure these functions Authenticity. Also Gas coverage to output the Gas consumption. 
